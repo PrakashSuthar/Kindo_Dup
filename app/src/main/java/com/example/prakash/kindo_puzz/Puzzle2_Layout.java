@@ -23,9 +23,9 @@ import android.view.WindowManager;
 
 class Puzzle2_Layout extends SurfaceView implements Runnable{
     Thread thread;
-    boolean Draw=true,touch=false,inRect=false,treasureRevealed=false;
+    boolean Draw=true,touch=false,inRect=false,treasureRevealed=false,down=false,move=false,up=false,startSet=false;
     Bitmap monsterRed,monsterBlue,treasurEmpty,treasureFull,Lump1,Lump2;
-
+    private static final float TOUCH_TOLERANCE = 4;
     Canvas canvas;
     Paint textPaint,greenPaint,brownPaint,Porterpaint;
     //private Paint circlePaint;
@@ -36,8 +36,9 @@ class Puzzle2_Layout extends SurfaceView implements Runnable{
     WindowManager windowManager;
     int height,width,monster_x,monster_y,scale_x,scale_y;
     float x,y;
+    int X1,X2,Y1,Y2,X3,X4,X,Y;
     int Lwid,Lheight;
-
+    String text="Who is the Thief??";
     public Puzzle2_Layout(Context context) {
         super(context);
         surfaceHolder=getHolder();
@@ -49,8 +50,10 @@ class Puzzle2_Layout extends SurfaceView implements Runnable{
         Porterpaint = new Paint();
         Porterpaint.setAntiAlias(true);
         Porterpaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));//PorterDuff.Mode.CLEAR
+        Porterpaint.setStrokeWidth(100);
+        //Porterpaint.
        // Porterpaint.setAlpha(0);
-
+        //circlePath.
         ((Activity)getContext()).getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
          height = displayMetrics.heightPixels;
         width = displayMetrics.widthPixels;
@@ -85,8 +88,11 @@ class Puzzle2_Layout extends SurfaceView implements Runnable{
                 canvas = surfaceHolder.lockCanvas();
             canvas.drawColor(0, PorterDuff.Mode.CLEAR);
                 canvas.drawBitmap(monsterBlue, (int) (0.1 * width), (int) (0.40 * height), null);
-
                 canvas.drawBitmap(monsterRed, (int) (0.55 * width), (int) (0.40 * height), null);
+                X3=(int) (0.55 * width);
+            X4=(int) (0.55 * width)+monsterBlue.getWidth();
+            canvas.drawBitmap(treasurEmpty,(int) (0.1 * width),(int) (0.40 * height)+monsterRed.getHeight(),null);
+            canvas.drawBitmap(treasureFull,(int) (0.55 * width),(int) (0.40 * height)+monsterBlue.getHeight(),null);
                 canvas.drawBitmap(Lump1,(int) (0.1 * width),(int) (0.40 * height)+monsterRed.getHeight(),null);
             canvas.drawBitmap(Lump2,(int) (0.55 * width),(int) (0.40 * height)+monsterBlue.getHeight(),null);
 
@@ -95,12 +101,8 @@ class Puzzle2_Layout extends SurfaceView implements Runnable{
             float textOffset = (textHeight / 2) - textPaint.descent();
 
             RectF bounds = new RectF(0, 0, width,(float)0.1*height);
-            canvas.drawText("Who is the THIEF??", bounds.centerX(), bounds.centerY() + textOffset, textPaint);
+            canvas.drawText(text, bounds.centerX(), bounds.centerY() + textOffset, textPaint);
             surfaceHolder.unlockCanvasAndPost(canvas);
-
-                if(treasureRevealed){
-                    success();
-                }
            // }
           //  else
            // {
@@ -146,16 +148,19 @@ class Puzzle2_Layout extends SurfaceView implements Runnable{
         greenPaint.setStyle(Paint.Style.FILL);
 
         brownPaint=new Paint();
-        brownPaint.setColor(Color.rgb(102,51,0));
-        brownPaint.setStyle(Paint.Style.FILL);
+        //brownPaint.setColor(Color.rgb(102,51,0));
+        //brownPaint.setStyle(Paint.Style.FILL);
         brownPaint.setAntiAlias(true);
-        brownPaint.setDither(true);
-        brownPaint.setColor(Color.WHITE);
+        //brownPaint.setDither(true);
+        brownPaint.setColor(Color.RED);
         brownPaint.setStyle(Paint.Style.STROKE);
         brownPaint.setStrokeJoin(Paint.Join.ROUND);
         brownPaint.setStrokeCap(Paint.Cap.ROUND);
-        brownPaint.setStrokeWidth(12);
-
+        //brownPaint.setStrokeWidth(12);
+        brownPaint.setStrokeWidth(5);
+        Porterpaint.setStrokeCap(Paint.Cap.ROUND);
+        Porterpaint.setStrokeJoin(Paint.Join.ROUND);
+       // Porterpaint.setStrokeJoin();
     }
 
     private Bitmap punchAHoleInABitmap(Bitmap foreground) {
@@ -170,7 +175,6 @@ class Puzzle2_Layout extends SurfaceView implements Runnable{
         //canvas.drawColor(Color.GREEN, PorterDuff.Mode.CLEAR);
         return bitmap;
     }
-    int X1,X2,Y1,Y2,X,Y;
 
 
 
@@ -178,56 +182,130 @@ class Puzzle2_Layout extends SurfaceView implements Runnable{
         Bitmap bitmap = Bitmap.createBitmap(Lump1.getWidth(), Lump1.getHeight(), Bitmap.Config.ARGB_8888);
         Canvas can = new Canvas(bitmap);
        // Porterpaint = new Paint();
-        can.drawBitmap(Lump1, 0, 0, Porterpaint);
+        can.drawBitmap(Lump1, 0, 0, null);
        // Porterpaint.setAntiAlias(true);
        // Porterpaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));//PorterDuff.Mode.CLEAR
        // Porterpaint.setAlpha(0);
         float radius = (float)(getScreenSize().x *0.001);
         radius=10;
-        can.drawCircle(x-X1, y-Y1, radius, Porterpaint);
+        if(up){
+            circlePath.lineTo(X-X1,Y-Y1);
+            circlePath.reset();
+			startSet=false;
+        }
+        if(down){
+            mX=x;
+            mY=y;
+            circlePath.reset();
+            circlePath.moveTo(X-X1,Y-Y1);
+            startSet=true;
+        }
+        if(move){
+            float dx = Math.abs(x - mX);
+            float dy = Math.abs(y - mY);
 
+            if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE) {
+                //circlePath.quadTo(mX, mY, (x + mX) / 2, (y + mY) / 2);
+                mX = x;
+                mY = y;
+            }
+            circlePath.lineTo(X-X1,Y-Y1);
+            //circlePath.
+        }
+        //circlePath.moveTo(X-X1,Y-Y1);
+        //circlePath.addCircle((float) (X-X1), (float)(Y-Y1), radius);
+        //can.drawCircle(X-X1, Y-Y1, radius, Porterpaint);
+        can.drawPath(circlePath,Porterpaint);
         return bitmap;
     }
     private Bitmap punchInLump2(){
         Bitmap bitmap = Bitmap.createBitmap(Lump1.getWidth(), Lump1.getHeight(), Bitmap.Config.ARGB_8888);
         Canvas can = new Canvas(bitmap);
         //Porterpaint = new Paint();
-        can.drawBitmap(Lump1, 0, 0, Porterpaint);
+        can.drawBitmap(Lump2, 0, 0, null);
         //Porterpaint.setAntiAlias(true);
         //Porterpaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));//PorterDuff.Mode.CLEAR
        // Porterpaint.setAlpha(0);
         float radius = (float)(getScreenSize().x *0.001);
         radius=10;
-        can.drawCircle(X-X1, Y-Y1, radius, Porterpaint);
+        if(up){
+            circlePath.lineTo(X-X3,Y-Y1);
+            circlePath.reset();
+        }
+        if(down){
+            circlePath.reset();
+            circlePath.moveTo(X-X3,Y-Y1);
+
+        }
+        if(move){
+            float dx = Math.abs(x - mX);
+            float dy = Math.abs(y - mY);
+
+            if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE) {
+               // circlePath.quadTo(mX, mY, (x + mX) / 2, (y + mY) / 2);
+                mX = x;
+                mY = y;
+            }
+            circlePath.lineTo(X-X3,Y-Y1);
+        }
+        can.drawPath(circlePath,Porterpaint);
+        //can.drawCircle(X-X1, Y-Y1, radius, Porterpaint);
         System.out.println("circle Drawn;");
         return bitmap;
 
     }
 
     private boolean deterPunch(){
-        //x,y
-        //For Lump1 Position is
-
-
-        //Rectangle 1 Boundaries
-
+        int rect=0;
         //For Rectangle 1;
-        if(X>=X1 &&X<=X2){
-            if(Y>=Y1&&Y<=Y2) {
+        if(X>=X1-20 &&X<=X2+20){
+            if(Y>=Y1-20&&Y<=Y2+20) {
+                rect=1;
                 Lump1=punchInLump1();
+
                 System.out.println("Inside Rectangle 1");
             return true;
             }
         }
         else {
-            int X3 = (int) (0.55 * width), X4 = X3 + Lwid;
-            if (X >= X3 && X<=X4){
-                if(Y>=Y1&&Y<=Y2){Lump2= punchInLump2();
+            System.out.println("REctandle X="+X+"\nY="+Y);
+            System.out.println("REctandle X3="+X3+"\nX4="+X4);
+            if (X >= X3-20 && X<=X4+20){
+                if(Y>=Y1-20&&Y<=Y2+20){
+                    Lump2= punchInLump2();
                     System.out.println("Inside Rectangle 2");
                 return true;
                 }
             }
+			startSet=false;
         }
+        canvas=surfaceHolder.lockCanvas();
+        canvas.drawColor(0, PorterDuff.Mode.CLEAR);
+        // canvas.drawColor(0, PorterDuff.Mode.CLEAR);
+        canvas.drawBitmap(monsterBlue,(int)(0.1*width),(int)(0.40*height),null);
+        //monsterRed=punchAHoleInABitmap(monsterRed);
+        canvas.drawBitmap(monsterRed,(int)(0.55*width),(int)(0.40*height),null);
+        //canvas.drawRect((int)(0.1*width),(int)(0.70*height));
+        //canvas.drawRec
+        canvas.drawBitmap(treasurEmpty,(int) (0.1 * width),(int) (0.40 * height)+monsterRed.getHeight(),null);
+        canvas.drawBitmap(treasureFull,(int) (0.55 * width),(int) (0.40 * height)+monsterBlue.getHeight(),null);
+       // if(!isTransparent(Lump1))
+            canvas.drawBitmap(Lump1,(int) (0.1 * width),(int) (0.40 * height)+monsterRed.getHeight(),null);
+        //if(!isTransparent(Lump2))
+            canvas.drawBitmap(Lump2,(int) (0.55 * width),(int) (0.40 * height)+monsterBlue.getHeight(),null);
+
+        //Text should be the topmost ...
+        // canvas.drawPath(mPath,  Porterpaint);
+        Paint paint=new Paint();
+        paint.setColor(Color.TRANSPARENT);
+        float textHeight = textPaint.descent() - textPaint.ascent();
+        float textOffset = (textHeight / 2) - textPaint.descent();
+
+        RectF bounds = new RectF(0, 0, width,(float)0.1*height);
+        canvas.drawOval(bounds, paint);
+        canvas.drawText(text, bounds.centerX(), bounds.centerY() + textOffset, textPaint);
+        surfaceHolder.unlockCanvasAndPost(canvas);
+
         return false;
 
     }
@@ -239,32 +317,23 @@ class Puzzle2_Layout extends SurfaceView implements Runnable{
         return size;
     }
     private float mX, mY;
-    private static final float TOUCH_TOLERANCE = 4;
-
     private void touch_start(float x, float y) {
+
         inRect=deterPunch();
-        //mPath.reset();
+        circlePath.reset();
         //mPath.moveTo(x, y);
         mX = x;
         mY = y;
         inRect=deterPunch();
         canvas=surfaceHolder.lockCanvas();
         canvas.drawColor(0, PorterDuff.Mode.CLEAR);
-        // canvas.drawColor(0, PorterDuff.Mode.CLEAR);
         canvas.drawBitmap(monsterBlue,(int)(0.1*width),(int)(0.40*height),null);
-        //monsterRed=punchAHoleInABitmap(monsterRed);
-        canvas.drawBitmap(monsterRed,(int)(0.55*width),(int)(0.40*height),null);
-        //canvas.drawRect((int)(0.1*width),(int)(0.70*height));
-        //canvas.drawRec
-        canvas.drawBitmap(treasurEmpty,(int) (0.1 * width),(int) (0.40 * height)+monsterRed.getHeight(),null);
+        canvas.drawBitmap(monsterRed,(int)(0.55*width),(int)(0.60*height),null);
+        canvas.drawBitmap(treasurEmpty,(int) (0.1 * width),(int) (0.40 * height)+monsterBlue.getHeight(),null);
         canvas.drawBitmap(treasureFull,(int) (0.55 * width),(int) (0.40 * height)+monsterBlue.getHeight(),null);
-        if(!isTransparent(Lump1))
         canvas.drawBitmap(Lump1,(int) (0.1 * width),(int) (0.40 * height)+monsterRed.getHeight(),null);
-        if(!isTransparent(Lump2))
         canvas.drawBitmap(Lump2,(int) (0.55 * width),(int) (0.40 * height)+monsterBlue.getHeight(),null);
 
-        //Text should be the topmost ...
-        // canvas.drawPath(mPath,  Porterpaint);
         Paint paint=new Paint();
         paint.setColor(Color.TRANSPARENT);
         float textHeight = textPaint.descent() - textPaint.ascent();
@@ -272,76 +341,9 @@ class Puzzle2_Layout extends SurfaceView implements Runnable{
 
         RectF bounds = new RectF(0, 0, width,(float)0.1*height);
         canvas.drawOval(bounds, paint);
-        canvas.drawText("Who is the THIEF??", bounds.centerX(), bounds.centerY() + textOffset, textPaint);
+        canvas.drawText(text, bounds.centerX(), bounds.centerY() + textOffset, textPaint);
         surfaceHolder.unlockCanvasAndPost(canvas);
     }
-
-    /*
-    Detect an empty Bitmap..
-    Bitmap emptyBitmap = Bitmap.createBitmap(myBitmap.getWidth(), myBitmap.getHeight(), myBitmap.getConfig());
-    if (myBitmap.sameAs(emptyBitmap)) {
-    // myBitmap is empty/blank
-}
-
-     */
-
-
-    private void touch_move(float x, float y) {
-           // mPath.quadTo(mX, mY, (x + mX)/2, (y + mY)/2);
-            mX = x;
-            mY = y;
-       inRect= deterPunch();
-
-          //  mPath.lineTo(mX, mY);
-
-            canvas=surfaceHolder.lockCanvas();
-        canvas.drawColor(0, PorterDuff.Mode.CLEAR);
-           // canvas.drawColor(0, PorterDuff.Mode.CLEAR);
-            canvas.drawBitmap(monsterBlue,(int)(0.1*width),(int)(0.40*height),null);
-            //monsterRed=punchAHoleInABitmap(monsterRed);
-            canvas.drawBitmap(monsterRed,(int)(0.55*width),(int)(0.40*height),null);
-            //canvas.drawRect((int)(0.1*width),(int)(0.70*height));
-            //canvas.drawRec
-        canvas.drawBitmap(Lump1,(int) (0.1 * width),(int) (0.40 * height)+monsterRed.getHeight(),null);
-        canvas.drawBitmap(Lump2,(int) (0.55 * width),(int) (0.40 * height)+monsterBlue.getHeight(),null);
-
-            //Text should be the topmost ...
-           // canvas.drawPath(mPath,  Porterpaint);
-            canvas.drawText("Who is the real thief??",(int)(0.1*width),(int)(0.050*height),textPaint);
-            surfaceHolder.unlockCanvasAndPost(canvas);
-
-    }
-
-    private void touch_up() {
-
-        //mPath.lineTo(mX, mY);
-        //circlePath.reset();
-        // commit the path to our offscreen
-        inRect=deterPunch();
-        // kill this so we don't double draw
-        canvas=surfaceHolder.lockCanvas();
-        canvas.drawColor(0, PorterDuff.Mode.CLEAR);
-        canvas.drawBitmap(monsterBlue,(int)(0.1*width),(int)(0.40*height),null);
-        //monsterRed=punchAHoleInABitmap(monsterRed);
-        canvas.drawBitmap(monsterRed,(int)(0.55*width),(int)(0.40*height),null);
-        //canvas.drawRect((int)(0.1*width),(int)(0.70*height));
-        //canvas.drawRec
-        canvas.drawBitmap(Lump1,(int) (0.1 * width),(int) (0.40 * height)+monsterRed.getHeight(),null);
-        canvas.drawBitmap(Lump2,(int) (0.55 * width),(int) (0.40 * height)+monsterBlue.getHeight(),null);
-
-        //Text should be the topmost ...
-        //canvas.drawPath(mPath,  Porterpaint);
-        canvas.drawText("Who is the real thief??",(int)(0.1*width),(int)(0.10*height),textPaint);
-        surfaceHolder.unlockCanvasAndPost(canvas);
-        //mPath.reset();
-        if(isTransparent(Lump1) && isTransparent(Lump2)){
-            treasureRevealed=true;
-            canvas.drawColor(Color.WHITE);
-            canvas.drawText(" Thief Revealed!!",100,100,greenPaint);
-
-        }
-    }
-
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         touch=true;
@@ -353,17 +355,29 @@ class Puzzle2_Layout extends SurfaceView implements Runnable{
         System.out.println("Handle Touch Event");
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                touch_start(x, y);
+                down=true;
+                inRect= deterPunch();
+                down=false;
                 invalidate();
                 break;
             case MotionEvent.ACTION_MOVE:
-                touch_move(x, y);
+                move=true;
+                inRect= deterPunch();
+                move=false;
+
                 invalidate();
                 break;
             case MotionEvent.ACTION_UP:
-                touch_up();
+                up=true;
+                inRect= deterPunch();
+                up=false;
                 invalidate();
                 break;
+        }
+        if(isTransparent(Lump1)&&isTransparent(Lump2))
+        {
+            treasureRevealed=true;
+            success();
         }
         return true;
     }
@@ -380,15 +394,10 @@ class Puzzle2_Layout extends SurfaceView implements Runnable{
 
     private boolean isTransparent(Bitmap b){
         Bitmap bitmap=Bitmap.createBitmap(b.getWidth(),b.getHeight(), b.getConfig());
-        //bitmap.eraseColor();
-        //Canvas c=new Canvas(bitmap);
-        //c.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-        if(b.sameAs(bitmap))//Don't use ==
+
+        if(b.sameAs(bitmap))
         {
-            //canvas.drawColor(Color.WHITE);
-
-            canvas.drawText("Revealed One!!",100,100,greenPaint);
-
+            text="Thief Revealed";
             System.out.println("Revealed");
             return true;
         }
