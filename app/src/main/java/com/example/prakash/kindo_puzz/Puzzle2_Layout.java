@@ -23,13 +23,13 @@ import android.view.WindowManager;
 
 class Puzzle2_Layout extends SurfaceView implements Runnable{
     Thread thread;
-    boolean Draw=true,touch=false,inRect=false,treasureRevealed=false,down=false,move=false,up=false,startSet=false;
+    boolean Draw=true,touch=false,inRect=false,treasureRevealed=false,down=false,move=false,up=false,startSet1=false,startSet2=false,outside=true;
     Bitmap monsterRed,monsterBlue,treasurEmpty,treasureFull,Lump1,Lump2;
     private static final float TOUCH_TOLERANCE = 4;
     Canvas canvas;
     Paint textPaint,greenPaint,brownPaint,Porterpaint;
     //private Paint circlePaint;
-    private Path circlePath;
+    private Path circlePath,circlePath2;
     Path mPath;
     SurfaceHolder surfaceHolder;
     DisplayMetrics metrics;
@@ -44,6 +44,7 @@ class Puzzle2_Layout extends SurfaceView implements Runnable{
         surfaceHolder=getHolder();
         //mPath = new Path();
         circlePath = new Path();
+        circlePath2=new Path();
         //Display metrics gives us Display screen parameterss heigth and width
         DisplayMetrics displayMetrics = new DisplayMetrics();
         windowManager=((Activity)getContext()).getWindowManager();
@@ -191,64 +192,73 @@ class Puzzle2_Layout extends SurfaceView implements Runnable{
         if(up){
             circlePath.lineTo(X-X1,Y-Y1);
             circlePath.reset();
-			startSet=false;
+            startSet1=false;
         }
         if(down){
             mX=x;
             mY=y;
             circlePath.reset();
             circlePath.moveTo(X-X1,Y-Y1);
-            startSet=true;
+            startSet1=true;
         }
         if(move){
             float dx = Math.abs(x - mX);
             float dy = Math.abs(y - mY);
-
             if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE) {
-                //circlePath.quadTo(mX, mY, (x + mX) / 2, (y + mY) / 2);
+                //mX is previous x
+                circlePath.quadTo(mX, mY, (x + mX) / 2, (y + mY) / 2);
                 mX = x;
                 mY = y;
             }
-            circlePath.lineTo(X-X1,Y-Y1);
-            //circlePath.
+            if(startSet1) {
+
+                circlePath.lineTo(X - X1, Y - Y1);
+            }
+            else
+            {
+                startSet1=true;
+                circlePath.reset();
+                circlePath.moveTo(X-X1,Y-Y1);
+
+            }
         }
-        //circlePath.moveTo(X-X1,Y-Y1);
-        //circlePath.addCircle((float) (X-X1), (float)(Y-Y1), radius);
-        //can.drawCircle(X-X1, Y-Y1, radius, Porterpaint);
         can.drawPath(circlePath,Porterpaint);
         return bitmap;
     }
     private Bitmap punchInLump2(){
         Bitmap bitmap = Bitmap.createBitmap(Lump1.getWidth(), Lump1.getHeight(), Bitmap.Config.ARGB_8888);
         Canvas can = new Canvas(bitmap);
-        //Porterpaint = new Paint();
         can.drawBitmap(Lump2, 0, 0, null);
-        //Porterpaint.setAntiAlias(true);
-        //Porterpaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));//PorterDuff.Mode.CLEAR
-       // Porterpaint.setAlpha(0);
-        float radius = (float)(getScreenSize().x *0.001);
-        radius=10;
+
         if(up){
-            circlePath.lineTo(X-X3,Y-Y1);
+            circlePath2.lineTo(X-X3,Y-Y1);
             circlePath.reset();
+            startSet2=false;
         }
         if(down){
-            circlePath.reset();
-            circlePath.moveTo(X-X3,Y-Y1);
-
+            circlePath2.reset();
+            circlePath2.moveTo(X-X3,Y-Y1);
+            startSet2=true;
         }
         if(move){
             float dx = Math.abs(x - mX);
             float dy = Math.abs(y - mY);
-
             if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE) {
-               // circlePath.quadTo(mX, mY, (x + mX) / 2, (y + mY) / 2);
+                circlePath.quadTo(mX, mY, (x + mX) / 2, (y + mY) / 2);
                 mX = x;
                 mY = y;
             }
-            circlePath.lineTo(X-X3,Y-Y1);
+            if(startSet2){
+
+            circlePath2.lineTo(X-X3,Y-Y1);
         }
-        can.drawPath(circlePath,Porterpaint);
+        else{
+                startSet2=true;
+                circlePath2.reset();
+                circlePath2.moveTo(X-X3,Y-Y1);
+            }
+        }
+        can.drawPath(circlePath2,Porterpaint);
         //can.drawCircle(X-X1, Y-Y1, radius, Porterpaint);
         System.out.println("circle Drawn;");
         return bitmap;
@@ -260,9 +270,8 @@ class Puzzle2_Layout extends SurfaceView implements Runnable{
         //For Rectangle 1;
         if(X>=X1-20 &&X<=X2+20){
             if(Y>=Y1-20&&Y<=Y2+20) {
-                rect=1;
+              //  outside=false;
                 Lump1=punchInLump1();
-
                 System.out.println("Inside Rectangle 1");
             return true;
             }
@@ -272,12 +281,17 @@ class Puzzle2_Layout extends SurfaceView implements Runnable{
             System.out.println("REctandle X3="+X3+"\nX4="+X4);
             if (X >= X3-20 && X<=X4+20){
                 if(Y>=Y1-20&&Y<=Y2+20){
+                   // outside=false;
                     Lump2= punchInLump2();
                     System.out.println("Inside Rectangle 2");
                 return true;
                 }
             }
-			startSet=false;
+            outside=true;
+            if(startSet1)
+			startSet1=false;
+            startSet2=false;
+
         }
         canvas=surfaceHolder.lockCanvas();
         canvas.drawColor(0, PorterDuff.Mode.CLEAR);
@@ -397,7 +411,7 @@ class Puzzle2_Layout extends SurfaceView implements Runnable{
 
         if(b.sameAs(bitmap))
         {
-            text="Thief Revealed";
+
             System.out.println("Revealed");
             return true;
         }
@@ -409,6 +423,7 @@ class Puzzle2_Layout extends SurfaceView implements Runnable{
     }
 
     public void success(){
+        text="Thief Revealed";
         Intent intent=new Intent(getContext(),Puzzle3.class);
         getContext().startActivity(intent);
     }
