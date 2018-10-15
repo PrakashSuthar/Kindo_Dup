@@ -187,8 +187,11 @@ class Puzzle2_Layout extends SurfaceView implements Runnable{
        // Porterpaint.setAntiAlias(true);
        // Porterpaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));//PorterDuff.Mode.CLEAR
        // Porterpaint.setAlpha(0);
+
         float radius = (float)(getScreenSize().x *0.001);
+
         radius=10;
+            /*
         if(up){
             circlePath.lineTo(X-X1,Y-Y1);
             circlePath.reset();
@@ -222,14 +225,16 @@ class Puzzle2_Layout extends SurfaceView implements Runnable{
 
             }
         }
-        can.drawPath(circlePath,Porterpaint);
+        */
+        //can.drawPath(circlePath,Porterpaint);
+        can.drawCircle(X-X1,Y-Y1,50,Porterpaint);
         return bitmap;
     }
     private Bitmap punchInLump2(){
         Bitmap bitmap = Bitmap.createBitmap(Lump1.getWidth(), Lump1.getHeight(), Bitmap.Config.ARGB_8888);
         Canvas can = new Canvas(bitmap);
         can.drawBitmap(Lump2, 0, 0, null);
-
+        /*
         if(up){
             circlePath2.lineTo(X-X3,Y-Y1);
             circlePath.reset();
@@ -259,7 +264,8 @@ class Puzzle2_Layout extends SurfaceView implements Runnable{
             }
         }
         can.drawPath(circlePath2,Porterpaint);
-        //can.drawCircle(X-X1, Y-Y1, radius, Porterpaint);
+        */
+        can.drawCircle(X-X3, Y-Y1, 50, Porterpaint);
         System.out.println("circle Drawn;");
         return bitmap;
 
